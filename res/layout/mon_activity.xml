@@ -13,6 +13,19 @@
      limitations under the License.
 -->
 
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    
+    
+<Button
+	android:id="@+id/button_1"
+	android:layout_height="wrap_content"
+	android:layout_width="wrap_content"
+	android:layout_alignParentLeft="true"
+	android:text="@string/txt_btn_1"
+	android:onClick="ActionPressBouton_1" />    
+
 <EditText xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/text"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -20,3 +33,6 @@
     android:autoText="true"
     android:capitalize="sentences"
     android:text="@string/hello_activity_text_text" />
+
+
+</RelativeLayout> 

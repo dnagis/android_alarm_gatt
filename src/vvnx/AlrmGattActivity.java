@@ -9,14 +9,15 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
 
+import android.util.Log;
+
 
 /**
  * A minimal "Hello, World!" application.
  */
 public class AlrmGattActivity extends Activity {
-    /**
-     * Called with the activity is first created.
-     */
+
+	private static final String TAG = "AlrmGatt";
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -26,4 +27,8 @@ public class AlrmGattActivity extends Activity {
         View view = getLayoutInflater().inflate(R.layout.mon_activity, null);
         setContentView(view);
     }
+    
+    public void ActionPressBouton_1(View v) {
+		Log.d(TAG, "press bouton 1");
+	}
 }

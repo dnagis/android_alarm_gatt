@@ -15,6 +15,7 @@
 
 <resources>
 
+	<string name="txt_btn_1">BTN_1</string>
     <string name="hello_activity_text_text">Hello, World! Vvnx</string>
 
 </resources>
