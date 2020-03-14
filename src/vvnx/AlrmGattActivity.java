@@ -11,13 +11,29 @@ import android.view.WindowManager;
 
 import android.util.Log;
 
+import android.content.Context;
+import android.content.Intent;
+
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+
+
+import android.os.SystemClock;
+
+
+
 
 /**
  * A minimal "Hello, World!" application.
  */
 public class AlrmGattActivity extends Activity {
+	
+	private AlarmManager alarmMgr;
+	private PendingIntent alarmIntent;
 
 	private static final String TAG = "AlrmGatt";
+	
+	
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,5 +46,15 @@ public class AlrmGattActivity extends Activity {
     
     public void ActionPressBouton_1(View v) {
 		Log.d(TAG, "press bouton 1");
+		
+		alarmMgr = (AlarmManager)getSystemService(ALARM_SERVICE);
+		Intent intent = new Intent(this, AlarmReceiver.class);
+		alarmIntent = PendingIntent.getService(this, 0, intent, 0);
+		
+		alarmMgr.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+        SystemClock.elapsedRealtime() +
+        60 * 1000, alarmIntent);
+		
+		
 	}
 }
