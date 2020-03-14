@@ -9,6 +9,10 @@ import android.content.Intent;
 import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.os.SystemClock;
+
 
 //<service android:name=".AlarmReceiver" />
 //sinon au logcat:
@@ -19,6 +23,9 @@ public class AlarmReceiver extends Service {
 	
 	private static final String TAG = "AlrmGatt";
 	
+	private AlarmManager alarmMgr;
+	private PendingIntent alarmIntent;
+	
 	
 	@Override
     public void onCreate() {
@@ -28,6 +35,17 @@ public class AlarmReceiver extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.d(TAG, "onStartCommand");
+		
+		alarmMgr = (AlarmManager)getSystemService(ALARM_SERVICE);
+		Intent newIntent = new Intent(this, AlarmReceiver.class);
+		alarmIntent = PendingIntent.getService(this, 0, newIntent, 0);
+		
+		alarmMgr.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+        SystemClock.elapsedRealtime() +
+        60 * 1000, alarmIntent);
+		
+		
+		
 				
 		stopSelf();
 		
