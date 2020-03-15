@@ -21,7 +21,7 @@ import android.content.ContentValues;
 
 
 
-//sqlite3 /data/data/vvnx.alrmgatt/databases/log.db "select datetime(EPOCH/1000, 'unixepoch', 'localtime'), BATT from log;"
+//sqlite3 /data/data/vvnx.alrmgatt/databases/log.db "select datetime(EPOCH/1000, 'unixepoch', 'localtime'), DATA from log;"
 
 public class BaseDeDonnees extends SQLiteOpenHelper {
 	
@@ -29,7 +29,7 @@ public class BaseDeDonnees extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "log.db";
     private static final int DATABASE_VERSION = 1;
-    private static final String CREATE_BDD_MAIN = "CREATE TABLE log (ID INTEGER PRIMARY KEY AUTOINCREMENT, EPOCH INTEGER NOT NULL, BATT INTEGER NOT NULL)";
+    private static final String CREATE_BDD_MAIN = "CREATE TABLE log (ID INTEGER PRIMARY KEY AUTOINCREMENT, EPOCH INTEGER NOT NULL, DATA INT NOT NULL)";
 
     private SQLiteDatabase bdd;
 
@@ -43,11 +43,11 @@ public class BaseDeDonnees extends SQLiteOpenHelper {
         db.execSQL(CREATE_BDD_MAIN);  
     }
     
-    public void logOne(int batteryPct){
+    public void logOne(int data){
 		bdd = this.getWritableDatabase();
 		ContentValues values = new ContentValues();
 		values.put("EPOCH", System.currentTimeMillis());
-		values.put("BATT", batteryPct);
+		values.put("DATA", data);
 		bdd.insert("log", null, values);
 	}
 	

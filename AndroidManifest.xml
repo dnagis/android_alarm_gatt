@@ -20,6 +20,7 @@
      to come from a domain that you own or have control over. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="vvnx.alrmgatt">
+    <uses-permission android:name="android.permission.BLUETOOTH" />
     <application android:label="VvnxAlrm_Gatt!">
         <activity android:name="AlrmGattActivity">
             <intent-filter>
