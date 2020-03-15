@@ -62,9 +62,9 @@ public class AlarmReceiver extends Service {
 		alarmMgr.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP,
 			SystemClock.elapsedRealtime() +
 			300 * 1000, alarmIntent);
-				
-		stopSelf();
 		
+		//le service: shutdown		
+		stopSelf();		
 		return START_NOT_STICKY; //not_sticky: le systeme ne le redémarrera pas si ménage à cause de memory
 	}
 
