@@ -31,6 +31,13 @@ rm -r tests
 	res/layout -> nom de l'activité <mon_activity>, celle qui est appelée dans 
 	getLayoutInflater().inflate(R.layout.<mon_activity>, null);
 
+<<<<<<< HEAD
+=======
+make AlrmGatt
+adb uninstall vvnx.alrmgatt
+adb install out/target/product/mido/system/app/AlrmGatt/AlrmGatt.apk
+
+>>>>>>> AllowWhileIdle
 
 
 ### WorkFlow
