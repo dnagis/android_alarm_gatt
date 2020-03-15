@@ -23,8 +23,9 @@ rm -r test/ (ou tests?)
 	getLayoutInflater().inflate(R.layout.<mon_activity>, null);
 
 make AlrmGatt
-adb install out/target/product/mido/system/app/AlrmGatt/AlrmGatt.apk
 adb uninstall vvnx.alrmgatt
+adb install out/target/product/mido/system/app/AlrmGatt/AlrmGatt.apk
+
 
 WorkFlow
 
