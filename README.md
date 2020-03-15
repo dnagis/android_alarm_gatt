@@ -21,44 +21,27 @@ You can think of a trailing / on a source as meaning "copy the contents of this 
 rsync -azvhu ks:/home/android/AlarmGattVvnx /initrd/mnt/dev_save/android/lineageOS/sources/development/samples
 rsync -azvhu /initrd/mnt/dev_save/android/lineageOS/sources/development/samples/AlarmGattVvnx ks:/home/android
 
-### Construction de l'ébauche - stub
-sample/HelloActivity
-rm -r tests
-	android.mk local_package_name
-	manifest: nom du package, nom de l'activité
-	.java: nom de la classe, nom du package dans la classe
-	on peut très bien avoir un nom de package/directories java très court (src/vvnx/maClasse.java)
-	res/layout -> nom de l'activité <mon_activity>, celle qui est appelée dans 
-	getLayoutInflater().inflate(R.layout.<mon_activity>, null);
-
-<<<<<<< HEAD
-=======
-make AlrmGatt
-adb uninstall vvnx.alrmgatt
-adb install out/target/product/mido/system/app/AlrmGatt/AlrmGatt.apk
-
->>>>>>> AllowWhileIdle
 
 
 ### WorkFlow
 
-samples/Alarm
-c'est du setRepeating. Ya pas de raison que ça résiste au Doze
 
-Stratégies à tester:
+-Première branche sur laquelle j'ai travaillé (140320): AllowWhileIdle (mergée en master):
+	Design: l'activité principale btn->starService(AlarmReceiver) > onCreate(), onStartCommand(), où du log en bdd est fait, et une alarm est settée
+	via setAndAllowWhileIdle() avec un intent qui démarre AlarmReceiver.class (donc décla en manifest). C'est donc possible qu'un service 
+	set une alarme pour se réveiller lui même. A la fin de onStartCommand j'ai mis stopSelf() et return START_NOT_STICKY.
+	Fonctionnement: pas archi régulier (il y a un setexactandallowwhileidle que j'ai pas testé) mais persistant overnight. Si ITVL=5 min on passe souvent à 9 minutes
+	, a l'air de fonctionner même quand, l'UI n'est pas on top (retour écran accueil)..
+	
+-Deuxième branche: "gatt" 
 
--Essayer set[exact]AndAllowWhileIdle()
-Démystifier le mécanisme: est ce que je peux set une nouvelle alarm from within celle qui vient de fire off?
-j'ai de l'espoir avec:
-https://stackoverflow.com/questions/11123543/alarmmanager-repeat
-https://code.luasoftware.com/tutorials/android/android-alarmmanager-repeating-alarm-daily-reminder/
 
-Les idées au cas où ça ne marche pas:
+
+
+Les idées au cas où non persistent:
 	Essayer de mettre une notification dans le service déclenché, comme dans samples/alarm, peut être que ça permet de passer outre les restrictions de batterie?
+	Foregroune service
 
--Faire comme LocTrack:
-	la main activity:
-		setRepeating qui déclenche une classe qui extends service qui fait le job, et write dans une BDD
-		lance un foreground service (avec ses notifs)
+
 
 
