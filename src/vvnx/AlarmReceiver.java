@@ -53,6 +53,17 @@ public class AlarmReceiver extends Service {
 	private static final UUID CHARACTERISTIC_PRFA_UUID = UUID.fromString("0000ff01-0000-1000-8000-00805f9b34fb");
 	private String BDADDR = "30:AE:A4:04:C3:5A";	
 	
+	private byte result = 0; 
+
+	/**
+	 * 
+	 * Service
+	 * 
+	 * 
+	 * 
+	 * */
+
+	
 	@Override
     public void onCreate() {
 		Log.d(TAG, "onCreate");
@@ -64,18 +75,18 @@ public class AlarmReceiver extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.d(TAG, "onStartCommand");
-	
-		//Bluetooth	
-		connectmGatt();		
 		
-		//Set prochaine alarm
+		//Set prochaine alarm, je le mets avant le bluetooth car je veux pas avoir de doute sur le set de l'alarm
 		alarmMgr = (AlarmManager)getSystemService(ALARM_SERVICE);
 		Intent newIntent = new Intent(this, AlarmReceiver.class);
 		alarmIntent = PendingIntent.getService(this, 0, newIntent, 0);
 		
 		alarmMgr.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP,
 			SystemClock.elapsedRealtime() +
-			300 * 1000, alarmIntent);
+			60 * 1000, alarmIntent);
+			
+		//Bluetooth	
+		connectmGatt();					
 	
 		return START_NOT_STICKY; //not_sticky: le systeme ne le redémarrera pas si ménage à cause de memory
 	}
@@ -83,14 +94,25 @@ public class AlarmReceiver extends Service {
     @Override
     public void onDestroy() {		
 		Log.d(TAG, "OnDestroy");
+		maBDD.logOne(result);
+		mBluetoothGatt.close(); //attention, empêcherait l'auto-reconnect(). mais sans ça j'ai des fantômes de tentatives de connexion. Et dans ce projet l'auto-reconnect c'est pas mon soucis
 	
 	 }
 	 
-	  @Override
+	@Override
 	public IBinder onBind(Intent intent) {
       // We don't provide binding, so return null
       return null;
 	}
+
+
+	/**
+	 * 
+	 * Bluetooth
+	 * 
+	 * 
+	 * 
+	 * */
 	
 	
 	void connectmGatt(){
@@ -111,9 +133,9 @@ public class AlarmReceiver extends Service {
 		new Handler().postDelayed(new Runnable() {
 		        @Override
 		        public void run() {
-					terminado();
+					stopSelf(); //-->onDestroy()
 		         }
-			}, 10000);
+			}, 15000); 
 	}
 	
 	
@@ -145,18 +167,12 @@ public class AlarmReceiver extends Service {
 				//Log.i(TAG, "onCharacteristicRead callback.");
 				byte[] data = characteristic.getValue();
 				Log.i(TAG, "onCharacteristicRead callback -> char data: " + data[0] + " " + data[1] + " " + data[2]); //donne pour data[0]: -86 et printf %x -86 --> ffffffffffffffaa or la value côté esp32 est 0xaa 
-				maBDD.logOne(data[0]);
-				mBluetoothGatt.close();
+				result = data[0];
 				//de toutes façons le timeout va stopSelf(), inutile stopSelf() ici
 				}
 	};
 	
-	
-	public void terminado(){
-		    Log.d(TAG, "terminado");
-		    mBluetoothGatt.close(); //attention, empêcherait l'auto-reconnect(). mais sans ça j'ai des fantômes de tentatives de connexion. Et ici l'auto-reconnect c'est pas mon soucis
-			stopSelf();		
-	}
+
 	
 	
 	
