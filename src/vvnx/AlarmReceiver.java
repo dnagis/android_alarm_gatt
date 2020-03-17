@@ -45,9 +45,14 @@ public class AlarmReceiver extends Service {
 	
 	private BaseDeDonnees maBDD;
 	
-	private BluetoothManager bluetoothManager = null;
-	private BluetoothGatt mBluetoothGatt = null;
+	
+	
+	private BluetoothManager bluetoothManager = null;	
 	private BluetoothAdapter mBluetoothAdapter = null;	
+	private BluetoothDevice monBTDevice = null;
+	private BluetoothGatt mBluetoothGatt = null;
+	
+	
 	private BluetoothGattCharacteristic mCharacteristic = null;	
 	private static final UUID SERVICE_UUID = UUID.fromString("000000ff-0000-1000-8000-00805f9b34fb");
 	private static final UUID CHARACTERISTIC_PRFA_UUID = UUID.fromString("0000ff01-0000-1000-8000-00805f9b34fb");
@@ -68,8 +73,7 @@ public class AlarmReceiver extends Service {
     public void onCreate() {
 		Log.d(TAG, "onCreate");
 		//création de la base de données
-		if (maBDD == null)
-			maBDD = new BaseDeDonnees(this);
+		if (maBDD == null) maBDD = new BaseDeDonnees(this);
     }
     
     @Override
@@ -95,7 +99,8 @@ public class AlarmReceiver extends Service {
     public void onDestroy() {		
 		Log.d(TAG, "OnDestroy");
 		maBDD.logOne(result);
-		mBluetoothGatt.close(); //attention, empêcherait l'auto-reconnect(). mais sans ça j'ai des fantômes de tentatives de connexion. Et dans ce projet l'auto-reconnect c'est pas mon soucis
+		mBluetoothGatt.disconnect();
+		mBluetoothGatt.close(); 
 	
 	 }
 	 
@@ -117,17 +122,19 @@ public class AlarmReceiver extends Service {
 	
 	void connectmGatt(){
 		
-		bluetoothManager = (BluetoothManager)getSystemService(BLUETOOTH_SERVICE);	
-		mBluetoothAdapter = bluetoothManager.getAdapter();	
-		if (mBluetoothAdapter == null) {
-			Log.d(TAG, "fail à la récup de l'adapter");
-			return;
-		}
+		if (bluetoothManager == null) bluetoothManager = (BluetoothManager)getSystemService(BLUETOOTH_SERVICE);	
+		if (mBluetoothAdapter == null) mBluetoothAdapter = bluetoothManager.getAdapter();	
+
 		
-		BluetoothDevice monEsp = mBluetoothAdapter.getRemoteDevice(BDADDR);   
-		
+		if (monBTDevice == null) monBTDevice = mBluetoothAdapter.getRemoteDevice(BDADDR);   
+				
 		//Il n'y a pas de timeout pour connectGatt: si le device n'est pas dispo ou si something goes wrong on va jamais sortir d'ici
-		mBluetoothGatt = monEsp.connectGatt(this, true, gattCallback);
+		if (mBluetoothGatt == null) {
+			mBluetoothGatt = monBTDevice.connectGatt(this, true, gattCallback); 
+			}
+			else {
+				mBluetoothGatt.connect();
+			}
 		
 		//j'ai pas trouvé d'implémentation du timeout, donc on fait un timeout homebrew
 		new Handler().postDelayed(new Runnable() {

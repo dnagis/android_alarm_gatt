@@ -38,26 +38,30 @@ frameworks/base/services/core/java/com/android/server/DeviceIdleController.java
 	, a l'air de fonctionner même quand, l'UI n'est pas foreground (retour écran accueil) -> si c'est vrai: très différent avec le comportement quand bluetooth
 	
 -Deuxième branche: "gatt" 
-	Premiers arrêts de l'appli, délai environ une heure. Mais je passe l'appli pas en foreground (retour home screen).
-	dumpsys deviceidle -> idle_to=+1h0m0s0ms
-	Hypothèse de ce kill: ce serait App Standby, qui expliquerait que mon appli soit killée quand pas en foreground.
-	Je m'assure de pouvoir distinguer une appli killée d'un bluetooth pas récupéré -> log en bdd, même si bluetooth a foiré.
+	Bien distinguer les problèmes bluetooth des problèmes idle: -> log en bdd, dans onDestroy(), même si bluetooth a foiré.
+	Je m'assure de pouvoir distinguer une appli killée d'un bluetooth pas récupéré 	
+		--> j'ai parfois des connections fantômes! readChar ne passe pas, et si je reset l'esp32 à ce moment là, le logcat me montre que plein de connections gatt attendaient
+		--> je modifie donc le code pour n'avoir qu'une seule instance de BluetoothGatt, que je reconnecte à chaque fois.
+
 	
-	
-		Tester. 
-			ITVL à 1 min
-			Appli lancée, foreground vs. pas foreground, et utiliser une des méthodes de test adb:
-				dumpsys deviceidle force-idle -> intervalle entre 2 logs passe à 9 minutes.
+	dumpsys deviceidle -> les settings affichés. (idle_to=+1h0m0s0ms ...), et l'historique (light idle, deep idle, ...)
+
+	Pour tester idle : dumpsys deviceidle force-idle -> intervalle entre 2 logs passe à 9 minutes.
+
+	Comportement actuel le 1703, téléphone débranché non touché: 
+		avec alarm set via setAndAllowWhileIdle, et un gatt qui est créé la première fois puis se reconnecte à chaque fois, et appli UI en foreground, pas de notifs ni de foreground service:
+		Stabilité: pas de plantage, on passe en idle dès débranchement: avec ITVL demandé 1 min: pendant une heure un réveil toutes les 10 minutes, puis deep idle, et là variable: va de 1 à 2 réveil par heure.
+			récup de readChar à chaque fois.
+		Je n'ai pas noté combien de batterie consommée par nuit. Pas fait de multiples nuits non plus.
+		Si UI en background: arrêt de l'appli
 		
-		Si c'est foreground: contourner avec la technique: "The app generates a notification that users see on the lock screen or in the notification tray." du dev guide doze-standby
-	
 
-
-
-Les idées au cas où non persistent:
+notes en vrac pour la suite:
+	Appli pas en foreground (retour home screen) modifie le comportement, kill je dirais...
+		Hypothèse: ce serait App Standby, qui expliquerait que mon appli soit killée quand pas en foreground.	
+	contourner avec la technique: "The app generates a notification that users see on the lock screen or in the notification tray." du dev guide doze-standby
 	Essayer de mettre une notification dans le service déclenché, comme dans samples/alarm, peut être que ça permet de passer outre les restrictions de batterie?
-	Foreground service
-
-
-
-
+		ToDo:	
+		Notif, pour ne pas être obligé d'avoir l'UI de l'appli en foreground
+		Foreground service?	
+		foreground vs. pas foreground, et utiliser une des méthodes de test adb:
