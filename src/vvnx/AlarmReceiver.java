@@ -98,7 +98,7 @@ public class AlarmReceiver extends Service {
     @Override
     public void onDestroy() {		
 		Log.d(TAG, "OnDestroy");
-		maBDD.logOne(result);
+		maBDD.logOne(result, getBatt());
 		mBluetoothGatt.disconnect();
 		mBluetoothGatt.close(); 
 	
@@ -177,21 +177,19 @@ public class AlarmReceiver extends Service {
 				result = data[0];
 				//de toutes façons le timeout va stopSelf(), inutile stopSelf() ici
 				}
-	};
+		};
 	
 
-	
-	
-	
-			
-		
 		//récup batt lvl (je peux pas le récup dans BDD car registerReceiver possible que depuis un service)
-		/*IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-		Intent batteryStatus = this.registerReceiver(null, ifilter);
-		int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-		int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-		Log.d(TAG, "batt lvl=" + level + " et " + scale);
-		int batteryPct = level * 100 / scale;*/
+		public int getBatt() {		
+			IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+			Intent batteryStatus = this.registerReceiver(null, ifilter);
+			int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+			int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+			Log.d(TAG, "batt lvl=" + level + " et " + scale);
+			int batteryPct = level * 100 / scale;
+			return batteryPct;
+		}
 	
 
 	

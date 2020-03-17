@@ -55,13 +55,18 @@ frameworks/base/services/core/java/com/android/server/DeviceIdleController.java
 		Je n'ai pas noté combien de batterie consommée par nuit. Pas fait de multiples nuits non plus.
 		Si UI en background: arrêt de l'appli
 		
+-Entre deuxième et troisième branche je remets le log de la batterie
+
+		
 
 notes en vrac pour la suite:
-	Appli pas en foreground (retour home screen) modifie le comportement, kill je dirais...
+	Appli pas en foreground (retour home screen) modifie le comportement quand tel débranché. kill je dirais...
 		Hypothèse: ce serait App Standby, qui expliquerait que mon appli soit killée quand pas en foreground.	
-	contourner avec la technique: "The app generates a notification that users see on the lock screen or in the notification tray." du dev guide doze-standby
-	Essayer de mettre une notification dans le service déclenché, comme dans samples/alarm, peut être que ça permet de passer outre les restrictions de batterie?
-		ToDo:	
+	dev guide doze-standby:
+	Dit qu'on peut contourner avec la technique: "The app generates a notification that users see on the lock screen or in the notification tray." 
+			dans samples/alarm, il y a de la notif
+		
+ToDo:	
 		Notif, pour ne pas être obligé d'avoir l'UI de l'appli en foreground
 		Foreground service?	
-		foreground vs. pas foreground, et utiliser une des méthodes de test adb:
+		foreground vs. pas foreground, dev guide doze/app_standby parle de 
