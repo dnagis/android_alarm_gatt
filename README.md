@@ -1,16 +1,31 @@
 # AlrmGatt
 
-Avoir du Gatt déclenché par Alrm, persistent. 
-En montagne (bivouaque, marche, grandeVoie, ...), en kite (anémo, capteurs bio pendant nav pour détecter problème, ...), dans une cabane en Ariège (température + Pression la nuit, ...),
-	dans un hôtel à Kaboul (PIR, détecteur de fumée, ...), ...
-UI (pas de démarage en shell) -> Il me faut du feed back sur le terrain (si la connection se fait pas, s'il y a plus de batterie)
+Une Alarm qui déclenche du Gatt. Persistent en idle / doze, y compris quand l'UI est en background (retour home screen) ou virée (enlevée de la LRU)
 
+### Design
+Une activity UI -> qui startService un service "alarmReceiver" sur clic bouton
+Ce service s'auto set une alarm dans son onStartCommand() avec setAndAllowWhileIdle(). -> alarm sera effectivement firée en idle MAIS si et seulement si l'appli est on top (foreground) 
+	sinon: ActivityManager: Background start not allowed... Mettre des notifications n'y fait rien. 
+	
+NB: un tel débranché immobile va en light idle rapidement, et y reste une heure (idle_to, réglable?) avant d'aller en deep idle. Voir dumpsys deviceidle.
+
+
+### Applications
+En montagne (bivouaque, marche, grandeVoie, cabane la nuit, ...), en kite (anémo, ...), capteurs de qualité de l'air, dans un logement temporaire pour pas avoir à installer un rpi, ...
+
+
+### Résultats so far
+	en idle jamais < 9 min d'intervalle, en deep idle dans les maintenances 1 à 2 * / h
+	pas encore eu une nuit entière le 18/03/20
 
 ### EveryDay
 # build & install
 make AlrmGatt
 adb install out/target/product/mido/system/app/AlrmGatt/AlrmGatt.apk
 adb uninstall vvnx.alrmgatt
+
+-->sans whitelist deviceidle, si l'appli n'est pas on top (son UI en foreground), aux réceptions d'alarmes: ActivityManager: Background start not allowed (si elle est foreground ça marche, mais il suffit d'une fois...)
+dumpsys deviceidle whitelist +vvnx.alrmgatt
 
 # rsync
 rsync options source destination
@@ -57,16 +72,46 @@ frameworks/base/services/core/java/com/android/server/DeviceIdleController.java
 		
 -Entre deuxième et troisième branche je remets le log de la batterie
 
-		
+	dev guide doze-standby: Dit qu'on peut contourner avec la technique: "The app generates a notification that users see on the lock screen or in the notification tray." 		
 
-notes en vrac pour la suite:
-	Appli pas en foreground (retour home screen) modifie le comportement quand tel débranché. kill je dirais...
-		Hypothèse: ce serait App Standby, qui expliquerait que mon appli soit killée quand pas en foreground.	
-	dev guide doze-standby:
-	Dit qu'on peut contourner avec la technique: "The app generates a notification that users see on the lock screen or in the notification tray." 
-			dans samples/alarm, il y a de la notif
+-Fait une branche notif, y compris avec du startForeground	->  ne m'a pas résolu le pb foreground / background
+
+## Résolution du problème: "quand l'UI n'est pas on top l'appli s'arrête". In a nutshell: quand l'appli n'est pas en foreground c'est l'activitymanager qui "ActivityManager: Background start not allowed".
+	solution: dumpsys deviceidle whitelist +vvnx.alrmgatt
+	
+	
+	Les intervenants potentiels:
+	-deviceidle	- dumpsys deviceidle
+	-alarmmanager - dumpsys alarm
+	-activity manager - dumpsys activity
+	
+Dumpsys activity - h
+	dumpsys activity -p vvnx.alrmgatt
+	dumpsys activity package vvnx.alrmgatt
+	dumpsys activity -p vvnx.alrmgatt processes
+		->  *APP* UID 10294 ProcessRecord{3b68530 15030:vvnx.alrmgatt/u0a294}
+		->  Process LRU (Least Recently Used) list -> top activity, previous, je comprends à peu près.
+		-> 	google 'LRU' -> https://developer.android.com/guide/components/activities/process-lifecycle
+	
+Dumpsys alarm
+	mAllowWhileIdleMinTime=+9m0s0ms <- 9min! correspond à ce qui est écrit dans le dev guide
+	min_interval=+1m0s0ms <- tient c'est ça qui me bloque à 60 secondes minimum ??? réglable?
+	
+Hypothèses:
+	premier lancement: on réveille toutes les minutes, et à partir du moment où j'ai passé l'UI derrière: c'est fini j'aurai jamais plus une minute. 
+		Question: si c'est bien ça, ça se passe où cette décision de 'delay' l'alarm???
 		
-ToDo:	
-		Notif, pour ne pas être obligé d'avoir l'UI de l'appli en foreground
-		Foreground service?	
-		foreground vs. pas foreground, dev guide doze/app_standby parle de 
+	même si je vire l'UI, l'alarm reste, mais:
+
+Si mon UI est pas on top (soit diminuée, soit arrêtée) et que j'attends une alarm (dumpsys alarm me dit les pending alarms) au moment où elle devrait être lancée je vois:
+03-18 10:19:59.981  1322  1570 W ActivityManager: Background start not allowed: service Intent { flg=0x4 cmp=vvnx.alrmgatt/.AlarmReceiver (has extras) } to vvnx.alrmgatt/.AlarmReceiver from pid=-1 uid=10294 pkg=vvnx.alrmgatt
+
+grep de l'erreur:
+frameworks/base/services/core/java/com/android/server/am/ActiveServices.java
+
+mido / # am start-service vvnx.alrmgatt/.AlarmReceiver
+Starting service: Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] cmp=vvnx.alrmgatt/.AlarmReceiver }
+Error: app is in background uid UidRecord{e6adf73 u0a294 CAC  bg:+15m26s630ms idle change:idle procs:1 seq(0,0,0)}
+
+dumpsys deviceidle whitelist +vvnx.alrmgatt
+
