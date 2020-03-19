@@ -32,7 +32,8 @@ adb install out/target/product/mido/system/app/AlrmGatt/AlrmGatt.apk
 
 
 
-# rsync
+# repo / rsync
+je commence à en avoir marre de git push à chaque fois donc du rsync vers kimsufi quand je travaille activement dessus
 rsync options source destination
 You can think of a trailing / on a source as meaning "copy the contents of this directory" as opposed to "copy the directory by name",
 	but in both cases the attributes of the containing directory are transferred to the containing directory on the destination
