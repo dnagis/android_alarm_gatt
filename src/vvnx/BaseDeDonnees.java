@@ -25,7 +25,7 @@ import android.content.ContentValues;
 
 public class BaseDeDonnees extends SQLiteOpenHelper {
 	
-	private static final String TAG = "LocTrack";
+	private static final String TAG = "AlrmGatt";
 
     private static final String DATABASE_NAME = "log.db";
     private static final int DATABASE_VERSION = 1;
@@ -50,6 +50,19 @@ public class BaseDeDonnees extends SQLiteOpenHelper {
 		values.put("DATA", data);
 		values.put("BATT", batt);
 		bdd.insert("log", null, values);
+	}
+	
+	
+	public long fetchLastEpochBDD(){
+		Log.d(TAG, "fetch dans bdd");
+		bdd = this.getWritableDatabase();
+		Cursor cursor_epoch = bdd.query("log", null, null, null, null, null, "EPOCH", null);
+		if (cursor_epoch.getCount() > 0) {
+			cursor_epoch.moveToLast();
+			return cursor_epoch.getLong(1);
+		} else {
+			return 0;
+		}
 	}
 	
     @Override
