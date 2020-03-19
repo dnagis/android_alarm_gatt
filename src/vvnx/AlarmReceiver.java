@@ -45,7 +45,7 @@ public class AlarmReceiver extends Service {
 	
 	private BaseDeDonnees maBDD;
 	
-	
+	private double[] envData; 
 	
 	private BluetoothManager bluetoothManager = null;	
 	private BluetoothAdapter mBluetoothAdapter = null;	
@@ -58,7 +58,7 @@ public class AlarmReceiver extends Service {
 	private static final UUID CHARACTERISTIC_PRFA_UUID = UUID.fromString("0000ff01-0000-1000-8000-00805f9b34fb");
 	private String BDADDR = "30:AE:A4:04:C3:5A";	
 	
-	private byte result = 0; 
+
 
 	/**
 	 * 
@@ -98,7 +98,7 @@ public class AlarmReceiver extends Service {
     @Override
     public void onDestroy() {		
 		Log.d(TAG, "OnDestroy");
-		maBDD.logOne(result, getBatt());
+		maBDD.logOne(envData, getBatt());
 		mBluetoothGatt.disconnect();
 		mBluetoothGatt.close(); 
 	
@@ -172,12 +172,21 @@ public class AlarmReceiver extends Service {
 		@Override
 		public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
 				//Log.i(TAG, "onCharacteristicRead callback.");
-				byte[] data = characteristic.getValue();
-				Log.i(TAG, "onCharacteristicRead callback -> char data: " + data[0] + " " + data[1] + " " + data[2]); //donne pour data[0]: -86 et printf %x -86 --> ffffffffffffffaa or la value côté esp32 est 0xaa 
-				result = data[0];
+				byte[] charAsBytes = characteristic.getValue();
+				parseBMX280(charAsBytes);
 				//de toutes façons le timeout va stopSelf(), inutile stopSelf() ici
 				}
 		};
+		
+		private void parseBMX280(byte[] rxData) {
+			//voir esp32_bmx280_gatts pour l'encodage des valeurs dans un array de bytes
+			double temp = (double)(rxData[0]+(rxData[1]/100.0));
+	        if (rxData[2]==0) temp=-temp;
+	        double press = (double)(rxData[3]+872+(rxData[4]/100.0));
+	        double hum = (double)(rxData[5]+(rxData[6]/100.0));		
+			Log.i(TAG, "recup data de la characteristic: " + temp + " " + press + " " + hum);
+			envData = new double[] {temp, press, hum}; 
+		}
 	
 
 		//récup batt lvl (je peux pas le récup dans BDD car registerReceiver possible que depuis un service)
@@ -186,7 +195,7 @@ public class AlarmReceiver extends Service {
 			Intent batteryStatus = this.registerReceiver(null, ifilter);
 			int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
 			int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-			Log.d(TAG, "batt lvl=" + level + " et " + scale);
+			//Log.d(TAG, "batt lvl=" + level + " et " + scale);
 			int batteryPct = level * 100 / scale;
 			return batteryPct;
 		}

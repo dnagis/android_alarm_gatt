@@ -24,7 +24,8 @@ make AlrmGatt
 adb install out/target/product/mido/system/app/AlrmGatt/AlrmGatt.apk
 adb uninstall vvnx.alrmgatt
 
--->sans whitelist deviceidle, si l'appli n'est pas on top (son UI en foreground), aux réceptions d'alarmes: ActivityManager: Background start not allowed (si elle est foreground ça marche, mais il suffit d'une fois...)
+-- sans whitelist deviceidle, si l'appli n'est pas on top (son UI en foreground), aux réceptions d'alarmes: ActivityManager: Background start not allowed (si elle est foreground ça marche, mais il suffit d'une fois...)
+-- et s'enlève souvent à la réinstall donc ne pas oublier sinon non persistent...
 dumpsys deviceidle whitelist +vvnx.alrmgatt
 
 # rsync
