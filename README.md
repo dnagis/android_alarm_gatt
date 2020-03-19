@@ -1,41 +1,46 @@
 # AlrmGatt
 
-Une Alarm qui déclenche du Gatt. Persistent en idle / doze, y compris quand l'UI est en background (retour home screen) ou virée (enlevée de la LRU)
+Une Alarm (AlarmManager) qui déclenche du Gatt. Persistent en idle / doze, y compris quand l'UI est en background (retour home screen) ou virée (enlevée de la LRU)
 
 ### Design
-Une activity UI -> qui startService un service "alarmReceiver" sur clic bouton
-Ce service s'auto set une alarm dans son onStartCommand() avec setAndAllowWhileIdle(). -> alarm sera effectivement firée en idle MAIS si et seulement si l'appli est on top (foreground) 
-	sinon: ActivityManager: Background start not allowed... Mettre des notifications n'y fait rien. 
+Une activity UI bouton qui startService un service "alarmReceiver"
+
+Ce service s'auto set une alarm dans son onStartCommand() avec setAndAllowWhileIdle(). -> alarm sera effectivement firée en idle MAIS si et seulement si l'appli est on top (foreground),
+	***SAUF*** si tu as fait un dumpsys deviceidle whitelist +vvnx.alrmgatt: Seule solution à l'heure actuelle pour persistance quand UI pas on top (je vais tester jobScheduler pour éviter ça car
+		ce n'est pas mainstream donc pas bankable). Gaffe: le whitelist est assez éphémère en ce moment. Je pensais que ça tenait sauf au reboot mais pas si résistant (en ce moment en tout cas).
+	si UI pas on top et pas whitelist, au déclenchement de l'alarm: ActivityManager: Background start not allowed... Mettre des notifications n'y fait rien. 
+	NB: ce système ne tient que si les alarmes tiennent: c'est le seul link entre deux starts de mon service. Pas de déclenchement d'alarme: fin de la vie.
 	
-NB: un tel débranché immobile va en light idle rapidement, et y reste une heure (idle_to, réglable?) avant d'aller en deep idle. Voir dumpsys deviceidle.
+NB: un tel débranché immobile va en light-idle rapidement, et y resterait une heure (idle_to, réglable?) avant d'aller en deep-idle. Voir l'output de dumpsys deviceidle.
 
 
 ### Applications
-En montagne (bivouaque, marche, grandeVoie, cabane la nuit, ...), en kite (anémo, ...), capteurs de qualité de l'air, dans un logement temporaire pour pas avoir à installer un rpi, ...
+Surtout les situations dans lesquelles le tel est immobile (idle = location / motion) mais on veut conserver de la batterie
+En montagne (bivouaque, marche, cabane la nuit, ...), en kite (anémo, ...), capteurs de qualité de l'air, dans un logement temporaire pour pas avoir à installer un rpi, ...
 
 
 ### Résultats so far
 	en idle jamais < 9 min d'intervalle, en deep idle dans les maintenances 1 à 2 * / h
-	pas encore eu une nuit entière le 18/03/20
+	sur la nuit je perds 4% de batterie avec l'appli. Sans?
 
 ### EveryDay
 # build & install
-make AlrmGatt
-adb install out/target/product/mido/system/app/AlrmGatt/AlrmGatt.apk
-adb uninstall vvnx.alrmgatt
 
--- sans whitelist deviceidle, si l'appli n'est pas on top (son UI en foreground), aux réceptions d'alarmes: ActivityManager: Background start not allowed (si elle est foreground ça marche, mais il suffit d'une fois...)
--- et s'enlève souvent à la réinstall donc ne pas oublier sinon non persistent...
-dumpsys deviceidle whitelist +vvnx.alrmgatt
+make AlrmGatt
+adb uninstall vvnx.alrmgatt
+adb install out/target/product/mido/system/app/AlrmGatt/AlrmGatt.apk
+
+
 
 # rsync
 rsync options source destination
 You can think of a trailing / on a source as meaning "copy the contents of this directory" as opposed to "copy the directory by name",
 	but in both cases the attributes of the containing directory are transferred to the containing directory on the destination
 -u: update: skip files that are newer on the receiver #mon mécanisme de protection "cook-proof" contre la connerie: overwriter des fichiers plus récents
-	
+
+rsync -azvhu /initrd/mnt/dev_save/android/lineageOS/sources/development/samples/AlarmGattVvnx ks:/home/android	
 rsync -azvhu ks:/home/android/AlarmGattVvnx /initrd/mnt/dev_save/android/lineageOS/sources/development/samples
-rsync -azvhu /initrd/mnt/dev_save/android/lineageOS/sources/development/samples/AlarmGattVvnx ks:/home/android
+
 
 ### Doc
 https://developer.android.com/training/monitoring-device-state/doze-standby
@@ -115,4 +120,7 @@ Starting service: Intent { act=android.intent.action.MAIN cat=[android.intent.ca
 Error: app is in background uid UidRecord{e6adf73 u0a294 CAC  bg:+15m26s630ms idle change:idle procs:1 seq(0,0,0)}
 
 dumpsys deviceidle whitelist +vvnx.alrmgatt
+
+-Branche UI
+	Un peu fourre tout. Affichage de la dernière entrée, BME280, ...
 
