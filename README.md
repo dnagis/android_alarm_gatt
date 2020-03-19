@@ -1,6 +1,6 @@
 # AlrmGatt
 
-Une Alarm (AlarmManager) qui déclenche du Gatt. Persistent en idle / doze, y compris quand l'UI est en background (retour home screen) ou virée (enlevée de la LRU)
+Une Alarm (AlarmManager) qui déclenche du Gatt. Persistent en idle / doze si l'UI est on top, et quand l'UI est en background (retour home screen) ou virée (enlevée de la LRU) si dumpsys deviceidle whitelist +vvnx.alrmgatt
 
 ### Design
 Une activity UI bouton qui startService un service "alarmReceiver"
