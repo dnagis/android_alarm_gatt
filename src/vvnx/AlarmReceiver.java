@@ -56,7 +56,7 @@ public class AlarmReceiver extends Service {
 	private BluetoothGattCharacteristic mCharacteristic = null;	
 	private static final UUID SERVICE_UUID = UUID.fromString("000000ff-0000-1000-8000-00805f9b34fb");
 	private static final UUID CHARACTERISTIC_PRFA_UUID = UUID.fromString("0000ff01-0000-1000-8000-00805f9b34fb");
-	private String BDADDR = "30:AE:A4:04:C3:5A";	
+	private String BDADDR = "24:62:AB:D7:6E:E6";	
 	
 
 
@@ -172,18 +172,16 @@ public class AlarmReceiver extends Service {
 		@Override
 		public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
 				//Log.i(TAG, "onCharacteristicRead callback.");
-				byte[] charAsBytes = characteristic.getValue();
-				parseBMX280(charAsBytes);
-				//de toutes façons le timeout va stopSelf(), inutile stopSelf() ici
+				parseBMX280(characteristic);
 				}
 		};
 		
-		private void parseBMX280(byte[] rxData) {
-			//voir esp32_bmx280_gatts pour l'encodage des valeurs dans un array de bytes
-			double temp = (double)(rxData[0]+(rxData[1]/100.0));
-	        if (rxData[2]==0) temp=-temp;
-	        double press = (double)(rxData[3]+872+(rxData[4]/100.0));
-	        double hum = (double)(rxData[5]+(rxData[6]/100.0));		
+		private void parseBMX280(BluetoothGattCharacteristic rxData) {
+			//voir esp32_bmx280_gatts pour l'encodage des valeurs
+			//avant de faisait avec un byte[] mais pour la pression ça passe pas: les bytes en java: aussi grands: il croient que c'est un two's complement donc negatif
+	        double temp = (double)(rxData.getIntValue(17,0) + (rxData.getIntValue(17,1)/100.0)); //17 = FORMAT_UINT8
+	        double press = (double)(rxData.getIntValue(17,3)+872+(rxData.getIntValue(17,4)/100.0));
+	        double hum = (double)(rxData.getIntValue(17,5)+(rxData.getIntValue(17,6)/100.0));
 			Log.i(TAG, "recup data de la characteristic: " + temp + " " + press + " " + hum);
 			envData = new double[] {temp, press, hum}; 
 		}
