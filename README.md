@@ -1,29 +1,40 @@
 # AlrmGatt
 
-Une Alarm (AlarmManager) qui déclenche du Gatt. Persistent en idle / doze si l'UI est on top, et quand l'UI est en background (retour home screen) ou virée (enlevée de la LRU) si dumpsys deviceidle whitelist +vvnx.alrmgatt
+Une Alarm (AlarmManager) qui déclenche du Gatt. 
+Motivation première: persistence au Doze - Idle (anémo, la nuit en rando bivouaque, home sans rpi, ...)
+
+Comportement: Stable si l'UI est on top, et quand l'UI est en background (retour home screen) ou virée (enlevée de la LRU) si dumpsys deviceidle whitelist +vvnx.alrmgatt
+
+Depuis j'ai trouvé de la doc et j'ai appris à faire les réglages device idle en shell. voir en haut de morphotox/android
 
 ### Design
-Une activity UI bouton qui startService un service "alarmReceiver"
+Une activity UI bouton qui startService un service "alarmReceiver".
+Ce service s'auto set une alarm dans son onStartCommand() avec setAndAllowWhileIdle().
 
-Ce service s'auto set une alarm dans son onStartCommand() avec setAndAllowWhileIdle(). -> alarm sera effectivement firée en idle MAIS si et seulement si l'appli est on top (foreground),
-	***SAUF*** si tu as fait un dumpsys deviceidle whitelist +vvnx.alrmgatt: Seule solution à l'heure actuelle pour persistance quand UI pas on top (je vais tester jobScheduler pour éviter ça car
-		ce n'est pas mainstream donc pas bankable). Gaffe: le whitelist est assez éphémère en ce moment. Je pensais que ça tenait sauf au reboot mais pas si résistant (en ce moment en tout cas).
+
+### Comportement
+
+Premiers tests
+	-> alarm sera effectivement firée en idle MAIS si et seulement si l'appli est on top (foreground) ***SAUF***
+		si tu as fait un dumpsys deviceidle whitelist +vvnx.alrmgatt: Seule solution à l'heure actuelle pour persistance quand UI pas on top
+	Attention le whitelist peut parfois être éphémère
+	Je pensais que ça tenait sauf au reboot mais pas toujours vrai
 	si UI pas on top et pas whitelist, au déclenchement de l'alarm: ActivityManager: Background start not allowed... Mettre des notifications n'y fait rien. 
-	NB: ce système ne tient que si les alarmes tiennent: c'est le seul link entre deux starts de mon service. Pas de déclenchement d'alarme: fin de la vie.
+	NB: ce système ne tient que sur des alarmes: c'est le seul link entre deux starts de mon service. Pas de déclenchement d'alarme ==> fin.
+	Fréquence: en idle jamais < 9 min d'intervalle, en deep idle dans les maintenances 1 à 2 * / h. Consistent avec la doc Android.
 	
-NB: un tel débranché immobile va en light-idle rapidement, et y resterait une heure (idle_to, réglable?) avant d'aller en deep-idle. Voir l'output de dumpsys deviceidle.
+	
+Une grosse semaine au Thor
+	Stable en règle général. Même la nuit
+	j'ai eu un arrêt de l'esp32 sur batterie (cause indéterminée) au bout de 2/3 j. Le problème: quand capteur relancé, l'appli
+	n'a pas repris les mesures. J'avais toujours l'UI pourtant. J'ai relancé le service avec le bouton: pas d'effet. Pas investigué.
+	
+	ToDo -> Tester comportement quand disparition / réapparition du capteur.
+		-> tests à plus long cours
 
 
-### Applications
-Surtout les situations dans lesquelles le tel est immobile (idle = location / motion) mais on veut conserver de la batterie
-En montagne (bivouaque, marche, cabane la nuit, ...), en kite (anémo, ...), capteurs de qualité de l'air, dans un logement temporaire pour pas avoir à installer un rpi, ...
 
-
-### Résultats so far
-	en idle jamais < 9 min d'intervalle, en deep idle dans les maintenances 1 à 2 * / h
-	sur la nuit je perds 4% de batterie avec l'appli. Sans?
-
-### EveryDay
+### Ergonomie: EveryDay
 # build & install
 
 make AlrmGatt
