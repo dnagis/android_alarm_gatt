@@ -1,21 +1,22 @@
-# AlrmGatt
+# AlrmGatt --> persistence d'une connexion Gatt au long cours (plusieurs jours)
 
 Une Alarm (AlarmManager) qui déclenche du Gatt. 
 Motivation première: persistence au Doze - Idle (anémo, la nuit en rando bivouaque, home sans rpi, ...)
 
 Comportement: Stable si l'UI est on top, et quand l'UI est en background (retour home screen) ou virée (enlevée de la LRU) si dumpsys deviceidle whitelist +vvnx.alrmgatt
 
-Depuis j'ai trouvé de la doc et j'ai appris à faire les réglages device idle en shell. voir en haut de morphotox/android
+Depuis j'ai trouvé de la doc doze-idle + réglages device idle en shell. voir en haut de morphotox/android
 
 ### Design
 Une activity UI bouton qui startService un service "alarmReceiver".
 Ce service s'auto set une alarm dans son onStartCommand() avec setAndAllowWhileIdle().
+Au onResume() rafraichissement d'un text sur l'UI pour afficher dernier log.
 
 
 ### Comportement
 
 Premiers tests
-	-> alarm sera effectivement firée en idle MAIS si et seulement si l'appli est on top (foreground) ***SAUF***
+	-> Alarm sera effectivement firée en idle MAIS si et seulement si l'appli est on top (foreground) ***SAUF***
 		si tu as fait un dumpsys deviceidle whitelist +vvnx.alrmgatt: Seule solution à l'heure actuelle pour persistance quand UI pas on top
 	Attention le whitelist peut parfois être éphémère
 	Je pensais que ça tenait sauf au reboot mais pas toujours vrai
@@ -25,12 +26,25 @@ Premiers tests
 	
 	
 Une grosse semaine au Thor
-	Stable en règle général. Même la nuit
-	j'ai eu un arrêt de l'esp32 sur batterie (cause indéterminée) au bout de 2/3 j. Le problème: quand capteur relancé, l'appli
-	n'a pas repris les mesures. J'avais toujours l'UI pourtant. J'ai relancé le service avec le bouton: pas d'effet. Pas investigué.
+	Stable 1 à 2j
+	La batterie du tel ne pose pas de problème
+	MAIS 
+	Problème de longévité de mes esp32 sur batterie. (nb: je ne faisais pas sleeper mes esp32). Au moins à 3 reprises au bout de 2/3 jours l'esp32 n'est plus visible avec hcitool lescan, et plus de nouvelles
+	mesures récupérées.
+	Je n'ai pas fait le test avec un esp32 sur secteur. 
+	Problème pour relancer cette appli après qu'elle ait fonctionné initialement avec un esp32 qui s'est arrêté. Elle ne le fait pas automatiquement (pourtant il devrait 
+	y avoir des alarmes? je n'ai pas regardé). J'ai réussi à la faire repartir une fois	en désactivant le bluetooth et en le réactivant, puis en relancant le service (bouton start).
 	
-	ToDo -> Tester comportement quand disparition / réapparition du capteur.
-		-> tests à plus long cours
+	
+### ToDo pour augmenter longévité (250320)
+Tester avec un capteur sur secteur pour discerner problème Android / esp32
+Tester comportement quand disparition / réapparition du capteur
+Regarder dans la liste des alarmes si lorsque le capteur disparait les alarmes continuent à se setter ou disparition (en gros est ce que ce système
+	résiste à l'absence de connexion
+Essayer avec un esp32 qui sleep une partie du temps / adapter mon timeout? (Pas pour cette appli, pour la longévité du système en général)
+
+
+
 
 
 

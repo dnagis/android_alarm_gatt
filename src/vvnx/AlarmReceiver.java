@@ -101,7 +101,12 @@ public class AlarmReceiver extends Service {
 		maBDD.logOne(envData, getBatt());
 		mBluetoothGatt.disconnect();
 		mBluetoothGatt.close(); 
-	
+		
+		//si je mets pas ça  j'ai n+1 onCharacteristicChanged() à chaque passage (nouvelle instance BluetoothGattCallback?)
+		//***MAIS***
+		//close() la connexion du coup j'ai pas d'auto-reconnect...
+		//mBluetoothGatt.close(); 
+
 	 }
 	 
 	@Override
@@ -155,10 +160,7 @@ public class AlarmReceiver extends Service {
 			} else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
 				//Log.i(TAG, "Disconnected from GATT server.");	
 			}
-	        //si je mets pas ça  j'ai n+1 onCharacteristicChanged() à chaque passage (nouvelle instance BluetoothGattCallback?)
-			//***MAIS***
-			//close() la connexion du coup j'ai pas d'auto-reconnect...
-			//mBluetoothGatt.close(); 
+
 		}
 	
 		@Override
@@ -178,7 +180,7 @@ public class AlarmReceiver extends Service {
 		
 		private void parseBMX280(BluetoothGattCharacteristic rxData) {
 			//voir esp32_bmx280_gatts pour l'encodage des valeurs
-			//avant de faisait avec un byte[] mais pour la pression ça passe pas: les bytes en java: aussi grands: il croient que c'est un two's complement donc negatif
+			//avant de faisait avec un byte[] mais pour la pression ça passe pas: les bytes en java: aussi grands: il croient que c'est un two's complement donc donne une valeur negative
 	        double temp = (double)(rxData.getIntValue(17,0) + (rxData.getIntValue(17,1)/100.0)); //17 = FORMAT_UINT8
 	        double press = (double)(rxData.getIntValue(17,3)+872+(rxData.getIntValue(17,4)/100.0));
 	        double hum = (double)(rxData.getIntValue(17,5)+(rxData.getIntValue(17,6)/100.0));
